@@ -40,6 +40,11 @@ function update() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // 顯示遊戲說明
+  ctx.fillStyle = '#fff';
+  ctx.font = '22px sans-serif';
+  ctx.fillText('閃避一切啡紅色的障礙物！', 10, 40);
+
   if (Math.random() < 0.02) spawnObstacle();
   obstacles.forEach(o => o.y += speed);
   obstacles = obstacles.filter(o => o.y < canvas.height + 50);
@@ -59,7 +64,7 @@ function update() {
   score++;
   ctx.fillStyle = '#fff';
   ctx.font = '20px sans-serif';
-  ctx.fillText('Score: ' + score, 10, 30);
+  ctx.fillText('Score: ' + score, 10, 80);
 
   if (gameOver) {
     ctx.fillStyle = '#fff';
