@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>手機小遊戲</title>
+  <style>
+    body { margin: 0; background: #222; }
+    canvas { display: block; margin: 0 auto; background: #333; touch-action: none; }
+  </style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+// 自動適配 iPhone 尺寸
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let player = { x: canvas.width/2 - 20, y: canvas.height - 80, w: 40, h: 40, color: '#4caf50' };
+let obstacles = [];
+let baseSpeed = 4;      // 第一關速度
+let speed = baseSpeed;  // 會隨關卡提升
+let score = 0;
+let gameOver = false;
+
+// 倒數相關
+let countdown = 3;
+let gameStarted = false;
+
+// 關卡系統
+let level = 1;
+let lastLevel = 1;
+let levelMessageTimer = 0; // 顯示「下一關開始」的時間
+
+function spawnObstacle() {
+  const w = 40 + Math.random() * 80;
+  const x = Math.random() * (canvas.width - w);
+  obstacles.push({ x, y: -50, w, h: 20, color: '#f44336' });
+}
+
+function collide(a, b) {
+  return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+}
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 顯示遊戲說明
+  ctx.fillStyle = '#fff';
+  ctx.font = '22px sans-serif';
+  ctx.fillText('閃避一切啡紅色的障礙物！', 10, 40);
+
+  // 倒數階段
+  if (!gameStarted) {
+    ctx.fillStyle = '#fff';
+    ctx.font = '60px sans-serif';
+    ctx.fillText(countdown, canvas.width/2 - 20, canvas.height/2);
+    requestAnimationFrame(update);
+    return;
+  }
+
+  // 計算關卡（每 2000 分一關）
+  level = Math.floor(score / 2000) + 1;
+
+  // 如果進入新關卡
+  if (level !== lastLevel) {
+    lastLevel = level;
+    speed = baseSpeed + (level - 1) * 2; // 每關速度 +2
+    levelMessageTimer = 120; // 顯示 2 秒
+  }
+
+  // 顯示「第 X 關開始」
+  if (levelMessageTimer > 0) {
+    ctx.fillStyle = '#ff0';
+    ctx.font = '40px sans-serif';
+    ctx.fillText(`第 ${level} 關開始！`, canvas.width/2 - 120, canvas.height/2 - 100);
+    levelMessageTimer--;
+  }
+
+  // 遊戲邏輯
+  if (!gameOver) {
+    if (Math.random() < 0.02) spawnObstacle();
+    obstacles.forEach(o => o.y += speed);
+    obstacles = obstacles.filter(o => o.y < canvas.height + 50);
+
+    for (const o of obstacles) {
+      if (collide(player, o)) gameOver = true;
+    }
+
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+
+    obstacles.forEach(o => {
+      ctx.fillStyle = o.color;
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    });
+
+    score++;
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Score: ' + score, 10, 80);
+    ctx.fillText('Level: ' + level, 10, 110);
+  }
+
+  if (gameOver) {
+    ctx.fillStyle = '#fff';
+    ctx.font = '32px sans-serif';
+    ctx.fillText('Game Over', canvas.width/2 - 90, canvas.height/2);
+    ctx.font = '20px sans-serif';
+    ctx.fillText('點擊重新開始', canvas.width/2 - 70, canvas.height/2 + 40);
+  }
+
+  requestAnimationFrame(update);
+}
+
+// 手機點擊 / 滑動控制玩家左右移動（倒數期間禁止）
+canvas.addEventListener('touchstart', handleInput);
+canvas.addEventListener('touchmove', handleInput);
+canvas.addEventListener('click', () => { if (gameOver) restart(); });
+
+function handleInput(e) {
+  if (!gameStarted) return;
+  const touch = e.touches ? e.touches[0] : e;
+  player.x = touch.clientX - player.w / 2;
+}
+
+function restart() {
+  obstacles = [];
+  score = 0;
+  gameOver = false;
+  player.x = canvas.width/2 - 20;
+  countdown = 3;
+  gameStarted = false;
+  level = 1;
+  lastLevel = 1;
+  speed = baseSpeed;
+  startCountdown();
+}
+
+function startCountdown() {
+  const timer = setInterval(() => {
+    countdown--;
+    if (countdown === 0) {
+      clearInterval(timer);
+      gameStarted = true;
+    }
+  }, 1000);
+}
+
+startCountdown();
+update();
+</script>
+</body>
+</html>
