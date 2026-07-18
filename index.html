@@ -21,7 +21,8 @@ canvas.height = window.innerHeight;
 
 let player = { x: canvas.width/2 - 20, y: canvas.height - 80, w: 40, h: 40, color: '#4caf50' };
 let obstacles = [];
-let speed = 4;
+let baseSpeed = 4;      // 第一關速度
+let speed = baseSpeed;  // 會隨關卡提升
 let score = 0;
 let gameOver = false;
 
@@ -31,7 +32,8 @@ let gameStarted = false;
 
 // 關卡系統
 let level = 1;
-let levelMessageTimer = 0; // 顯示「第二關開始」的時間
+let lastLevel = 1;
+let levelMessageTimer = 0; // 顯示「下一關開始」的時間
 
 function spawnObstacle() {
   const w = 40 + Math.random() * 80;
@@ -60,18 +62,21 @@ function update() {
     return;
   }
 
-  // 關卡切換：達到 2000 分 → 第二關
-  if (score >= 2000 && level === 1) {
-    level = 2;
-    speed = 6; // 第二關速度更快
-    levelMessageTimer = 120; // 顯示 2 秒（60fps * 2）
+  // 計算關卡（每 2000 分一關）
+  level = Math.floor(score / 2000) + 1;
+
+  // 如果進入新關卡
+  if (level !== lastLevel) {
+    lastLevel = level;
+    speed = baseSpeed + (level - 1) * 2; // 每關速度 +2
+    levelMessageTimer = 120; // 顯示 2 秒
   }
 
-  // 顯示第二關開始訊息
+  // 顯示「第 X 關開始」
   if (levelMessageTimer > 0) {
     ctx.fillStyle = '#ff0';
     ctx.font = '40px sans-serif';
-    ctx.fillText('第二關開始！', canvas.width/2 - 120, canvas.height/2 - 100);
+    ctx.fillText(`第 ${level} 關開始！`, canvas.width/2 - 120, canvas.height/2 - 100);
     levelMessageTimer--;
   }
 
@@ -130,7 +135,8 @@ function restart() {
   countdown = 3;
   gameStarted = false;
   level = 1;
-  speed = 4;
+  lastLevel = 1;
+  speed = baseSpeed;
   startCountdown();
 }
 
