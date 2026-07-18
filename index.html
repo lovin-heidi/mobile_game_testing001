@@ -25,6 +25,10 @@ let speed = 4;
 let score = 0;
 let gameOver = false;
 
+// 倒數相關
+let countdown = 3;
+let gameStarted = false;
+
 function spawnObstacle() {
   const w = 40 + Math.random() * 80;
   const x = Math.random() * (canvas.width - w);
@@ -36,10 +40,25 @@ function collide(a, b) {
 }
 
 function update() {
-  if (gameOver) return;
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // 顯示遊戲說明
+  ctx.fillStyle = '#fff';
+  ctx.font = '22px sans-serif';
+  ctx.fillText('閃避一切啡紅色的障礙物！', 10, 40);
+
+  // 倒數階段
+  if (!gameStarted) {
+    ctx.fillStyle = '#fff';
+    ctx.font = '60px sans-serif';
+    ctx.fillText(countdown, canvas.width/2 - 20, canvas.height/2);
+
+    return; // 不開始遊戲邏輯
+  }
+
+  if (gameOver) return;
+
+  // 遊戲正式開始
   if (Math.random() < 0.02) spawnObstacle();
   obstacles.forEach(o => o.y += speed);
   obstacles = obstacles.filter(o => o.y < canvas.height + 50);
@@ -59,7 +78,7 @@ function update() {
   score++;
   ctx.fillStyle = '#fff';
   ctx.font = '20px sans-serif';
-  ctx.fillText('Score: ' + score, 10, 30);
+  ctx.fillText('Score: ' + score, 10, 80);
 
   if (gameOver) {
     ctx.fillStyle = '#fff';
@@ -72,11 +91,13 @@ function update() {
   }
 }
 
+// 手機點擊 / 滑動控制玩家左右移動（倒數期間禁止）
 canvas.addEventListener('touchstart', handleInput);
 canvas.addEventListener('touchmove', handleInput);
 canvas.addEventListener('click', () => { if (gameOver) restart(); });
 
 function handleInput(e) {
+  if (!gameStarted) return; // 倒數時不能移動
   const touch = e.touches ? e.touches[0] : e;
   player.x = touch.clientX - player.w / 2;
 }
@@ -86,9 +107,23 @@ function restart() {
   score = 0;
   gameOver = false;
   player.x = canvas.width/2 - 20;
-  requestAnimationFrame(update);
+  countdown = 3;
+  gameStarted = false;
+  startCountdown();
 }
 
+// 倒數計時器
+function startCountdown() {
+  const timer = setInterval(() => {
+    countdown--;
+    if (countdown === 0) {
+      clearInterval(timer);
+      gameStarted = true;
+    }
+  }, 1000);
+}
+
+startCountdown();
 update();
 </script>
 </body>
