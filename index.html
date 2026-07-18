@@ -29,6 +29,10 @@ let gameOver = false;
 let countdown = 3;
 let gameStarted = false;
 
+// 關卡系統
+let level = 1;
+let levelMessageTimer = 0; // 顯示「第二關開始」的時間
+
 function spawnObstacle() {
   const w = 40 + Math.random() * 80;
   const x = Math.random() * (canvas.width - w);
@@ -47,7 +51,7 @@ function update() {
   ctx.font = '22px sans-serif';
   ctx.fillText('閃避一切啡紅色的障礙物！', 10, 40);
 
-  // 倒數階段：持續重畫畫面
+  // 倒數階段
   if (!gameStarted) {
     ctx.fillStyle = '#fff';
     ctx.font = '60px sans-serif';
@@ -56,8 +60,23 @@ function update() {
     return;
   }
 
+  // 關卡切換：達到 2000 分 → 第二關
+  if (score >= 2000 && level === 1) {
+    level = 2;
+    speed = 6; // 第二關速度更快
+    levelMessageTimer = 120; // 顯示 2 秒（60fps * 2）
+  }
+
+  // 顯示第二關開始訊息
+  if (levelMessageTimer > 0) {
+    ctx.fillStyle = '#ff0';
+    ctx.font = '40px sans-serif';
+    ctx.fillText('第二關開始！', canvas.width/2 - 120, canvas.height/2 - 100);
+    levelMessageTimer--;
+  }
+
+  // 遊戲邏輯
   if (!gameOver) {
-    // 遊戲正式開始
     if (Math.random() < 0.02) spawnObstacle();
     obstacles.forEach(o => o.y += speed);
     obstacles = obstacles.filter(o => o.y < canvas.height + 50);
@@ -78,6 +97,7 @@ function update() {
     ctx.fillStyle = '#fff';
     ctx.font = '20px sans-serif';
     ctx.fillText('Score: ' + score, 10, 80);
+    ctx.fillText('Level: ' + level, 10, 110);
   }
 
   if (gameOver) {
@@ -88,7 +108,6 @@ function update() {
     ctx.fillText('點擊重新開始', canvas.width/2 - 70, canvas.height/2 + 40);
   }
 
-  // 無論是否 GameOver，都持續重畫（方便之後加特效）
   requestAnimationFrame(update);
 }
 
@@ -98,7 +117,7 @@ canvas.addEventListener('touchmove', handleInput);
 canvas.addEventListener('click', () => { if (gameOver) restart(); });
 
 function handleInput(e) {
-  if (!gameStarted) return; // 倒數時不能移動
+  if (!gameStarted) return;
   const touch = e.touches ? e.touches[0] : e;
   player.x = touch.clientX - player.w / 2;
 }
@@ -110,10 +129,11 @@ function restart() {
   player.x = canvas.width/2 - 20;
   countdown = 3;
   gameStarted = false;
+  level = 1;
+  speed = 4;
   startCountdown();
 }
 
-// 倒數計時器
 function startCountdown() {
   const timer = setInterval(() => {
     countdown--;
